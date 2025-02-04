@@ -1,0 +1,11 @@
+testdata
+├── empty_dir
+├── executable
+├── executable_empty_file
+├── link -> executable
+├── not_empty_dir
+│   └── file
+├── not_executable
+└── not_executable_empty_file
+
+3 directories, 6 files

@@ -1,1 +1,6 @@
+# test data
 testdata
+
+# bats
+bats
+test_helper

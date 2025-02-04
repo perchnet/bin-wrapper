@@ -11,9 +11,20 @@ on:
   workflow_dispatch:
 
 jobs:
-    lint:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v2
-        - name: Lint
-          run: just lint-test
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v3
+      - uses: pre-commit/action@v3.0.1
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: 'true'
+      - name: Install Just
+        uses: ./.github/actions/install-just
+      - name: Run tests
+        run: just run-tests

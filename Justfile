@@ -36,7 +36,7 @@ fix:
 clean:
     #!/usr/bin/env bash
     set -euox pipefail
-    git clean -fdx
+    git clean -fdX
 
 # Initialize submodules
 [group('Utility')]
@@ -48,7 +48,7 @@ init-submodules:
 clone-and-test:
     #!/usr/bin/env bash
     set -euxo pipefail
-    just run-pre-commit
+    just pre-commit
     TEMPDIR="$(mktemp --tmpdir -d {{ PROJECT }}.XXXXXXXX)"
     git clone "{{ REPO }}" "${TEMPDIR}" --recursive
     cd "${TEMPDIR}"
@@ -59,13 +59,16 @@ clone-and-test:
 # Run bats tests
 [group('Tests')]
 run-tests:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    [ ! -d ./test/bats ] && just init-submodules
     ./test/bats/bin/bats test/test.bats
 
 # Run pre-commit hooks
 [group('Lint')]
-run-pre-commit:
+pre-commit:
     pre-commit run -a
 
 # Run pre-commit hooks and tests
 [group('Utility')]
-lint-test: run-pre-commit run-tests
+lint-test: pre-commit run-tests

@@ -77,7 +77,7 @@ MAIN() {
     fi
 
     # Now template the script into the destination.
-    TEMPLATE_SCRIPT | tee "${LINK_OR_BIN}"
+    TEMPLATE_SCRIPT > "${LINK_OR_BIN}"
     chmod +x "${LINK_OR_BIN}"
 }
 

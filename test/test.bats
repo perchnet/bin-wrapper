@@ -55,7 +55,6 @@ wrap_bin() {
     run wrap_bin "${DIR}/testdata/executable" -flag
     assert_success
     assert_file_executable "${DIR}/testdata/executable"
-        cat "${DIR}/testdata/executable"
     assert_file_contains "${DIR}/testdata/executable" \
         "exec ${DIR}"'/testdata/executable.real -flag  "$@"'
 }
@@ -64,7 +63,22 @@ wrap_bin() {
     run wrap_bin "${DIR}/testdata/link" -flag
     assert_success
     assert_file_executable "${DIR}/testdata/link"
-        cat "${DIR}/testdata/executable"
     assert_file_contains "${DIR}/testdata/link" \
         "exec ${DIR}"'/testdata/executable -flag  "$@"'
+}
+
+@test "wrap-bin.sh ${DIR}/testdata/executable '-flag with spaces'" {
+    run wrap_bin "${DIR}/testdata/executable" '-flag with spaces'
+    assert_success
+    assert_file_executable "${DIR}/testdata/executable"
+    assert_file_contains "${DIR}/testdata/executable" \
+        "exec ${DIR}"'/testdata/executable.real -flag\\ with\\ spaces  "$@"'
+}
+
+@test "wrap-bin.sh ${DIR}/testdata/link '-flag with spaces'" {
+    run wrap_bin "${DIR}/testdata/link" '-flag with spaces'
+    assert_success
+    assert_file_executable "${DIR}/testdata/link"
+    assert_file_contains "${DIR}/testdata/link" \
+        "exec ${DIR}"'/testdata/executable -flag\\ with\\ spaces  "$@"'
 }

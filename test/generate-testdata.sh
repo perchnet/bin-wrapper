@@ -12,15 +12,17 @@ for a in "$@"; do
 done
 EOF
 )
+USAGE='Usage: generate-testdata.sh <directory>'
+directory="${1:?"${USAGE}"}"
 
-if [ -f "$1" ] ; then
-    echo "$1 exists!"
+if [ -f "${directory}" ] ; then
+    echo "${directory} exists!"
     exit 1
 fi
 
-mkdir "${1}"
+mkdir "${directory}"
 
-cd "${1}"
+cd "${directory}"
 mkdir empty_dir
 printf %s "${TESTSCRIPT}" > executable
 chmod 755 executable

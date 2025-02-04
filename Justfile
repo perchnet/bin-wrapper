@@ -64,6 +64,12 @@ run-tests:
     [ ! -d ./test/bats ] && just init-submodules
     ./test/bats/bin/bats test/test.bats
 
+[private]
+test: run-tests
+
+[private]
+lint: pre-commit
+
 # Run pre-commit hooks
 [group('Lint')]
 pre-commit:

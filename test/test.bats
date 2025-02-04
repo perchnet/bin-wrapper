@@ -37,7 +37,6 @@ wrap_bin() {
 
 @test "wrap-bin.sh ${DIR}/testdata/executable (no flags)" {
     run wrap_bin "${DIR}/testdata/executable"
-
     assert_success
     assert_file_executable "${DIR}/testdata/executable"
     assert_file_contains "${DIR}/testdata/executable" \
@@ -50,4 +49,22 @@ wrap_bin() {
     assert_success
     assert_file_contains "${DIR}/testdata/link" \
         "exec ${DIR}"'/testdata/executable  "$@"'
+}
+
+@test "wrap-bin.sh ${DIR}/testdata/executable -flag (simple flag)" {
+    run wrap_bin "${DIR}/testdata/executable" -flag
+    assert_success
+    assert_file_executable "${DIR}/testdata/executable"
+        cat "${DIR}/testdata/executable"
+    assert_file_contains "${DIR}/testdata/executable" \
+        "exec ${DIR}"'/testdata/executable.real -flag  "$@"'
+}
+
+@test "wrap-bin.sh ${DIR}/testdata/link -flag (simple flag)" {
+    run wrap_bin "${DIR}/testdata/link" -flag
+    assert_success
+    assert_file_executable "${DIR}/testdata/link"
+        cat "${DIR}/testdata/executable"
+    assert_file_contains "${DIR}/testdata/link" \
+        "exec ${DIR}"'/testdata/executable -flag  "$@"'
 }

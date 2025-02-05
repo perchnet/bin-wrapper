@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euxo pipefail
 # wrap-bin.sh - Create wrapper script
 #
 # This script will create a wrapper script, replacing the passed argument (a link) with a wrapper script that applies some flags.
@@ -60,14 +60,14 @@ MAIN() {
 
     # `test -x FOO_FILE` returns true for executable files, but also returns true for executable links that point to executables. However, it returns false for broken links, regular files, and nonexistant files.
     RETURN_IF_NOT_X="${RETURN_IF_NOT_X:-0}" # Set to 1 to fail
-    if [ ! -x "${LINK_OR_BIN}" ] ; then
+    if [[ ! -x "${LINK_OR_BIN}" ]] ; then
         echo "${LINK_OR_BIN} is not an executable, skipping..."
         return "${RETURN_IF_NOT_X}"
     fi
 
     # Check the target
     TARGET=$(readlink -e "${LINK_OR_BIN}")
-    if [ "${LINK_OR_BIN}" != "${TARGET}" ] ; then
+    if [[ -L "${LINK_OR_BIN}" ]] ; then
         # LINK_OR_BIN is a link, so we can just remove it to replace it with a wrapper script that calls it.
         rm -f "${LINK_OR_BIN}"
     else

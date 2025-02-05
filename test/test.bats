@@ -1,4 +1,4 @@
-
+# shellcheck shell=bash
 setup() {
     load 'test_helper/bats-support/load'
     load 'test_helper/bats-assert/load'
@@ -7,18 +7,31 @@ setup() {
     # get the containing directory of this file
     # use $BATS_TEST_FILENAME instead of ${BASH_SOURCE[0]} or $0,
     # as those will point to the bats executable's location or the preprocessed file respectively
-    DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
+    # shellcheck disable=SC2154
+    DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")" >/dev/null 2>&1 && pwd)"
     DIR="$(realpath "${DIR}")"
     # make executables in src/ visible to PATH
-    PATH="$DIR/../src:$PATH"
+    PATH="${DIR}/../src:${PATH}"
     # reset testdata
     rm -fr "${DIR}/testdata"
-    >/dev/null 2>&1 "${DIR}/generate-testdata.sh" "${DIR}/testdata"
+    "${DIR}/generate-testdata.sh" >/dev/null 2>&1 "${DIR}/testdata"
 }
 setup
 
+# https://stackoverflow.com/a/29613573
+#   quoteRe <text>
+# shellcheck disable=SC1003
+quoteRe() {
+    INPUT="${1}"
+    SUBSTITUTED=$(sed -e 's/[^^]/[&]/g' \
+    -e 's/\^/\\^/g' \
+    -e '$!a\'$'\n''\\n' <<<"${INPUT}" )
+    printf %s "${SUBSTITUTED}" | tr -d '\n';
+}
+
 get_usage() {
-    wrap-bin.sh --help 2>&1 | grep "Usage:"
+    OUTPUT=$(wrap-bin.sh --help 2>&1)
+    grep "Usage:" <<<"${OUTPUT}"
 }
 @test "get usage message" {
     run get_usage
@@ -35,59 +48,66 @@ wrap_bin() {
     assert_output --partial 'Usage:'
 }
 
-@test "wrap-bin.sh ${DIR}/testdata/executable (no flags)" {
-    run wrap_bin "${DIR}/testdata/executable"
+# generic test
+generic_test() {
+    local TARGET FLAGS FLAGS_SPLAT REAL regex
+    TARGET="${1}"
+    shift
+    if [[ -n "$*" ]] ; then
+        # no extra flags
+        FLAGS_SPLAT=""
+    else
+        # extra flags
+        FLAGS_SPLAT="$(printf %q "$@")"
+    fi
+    REAL="$(readlink -f "${TARGET:?}")"
+    if [[ "${TARGET}" == "${REAL}" ]]; then
+        # it will be renamed to TARGET.real
+        REAL="${TARGET}.real"
+    else
+        # it should be a link, triple-check that
+        assert_link_exists "${TARGET}"
+    fi
+    run wrap_bin "${TARGET}" "${FLAGS[@]}"
     assert_success
-    assert_file_executable "${DIR}/testdata/executable"
-    assert_file_contains "${DIR}/testdata/executable" \
-        "exec ${DIR}"'/testdata/executable.real  "$@"'
-    run "${DIR}/testdata/executable"
+    assert_file_executable "${TARGET}"
+    regex="$(quoteRe 'exec '"${REAL}" "${FLAGS_SPLAT}"' "$@"')"
+    assert_file_contains "${TARGET}" \
+        "${regex}"
+    run "${TARGET}"
     assert_success
-    assert_output "\$0 = ${DIR}/testdata/executable.real"
-    run "${DIR}/testdata/executable" "arg1" "arg2" "arg with spaces"
+    cat "${TARGET}"
+    OUTPUT="\$0 = ${REAL}"
+    run "${TARGET}"
+    assert_output "${OUTPUT}"
+    run "${TARGET}" "arg1" "arg2" "arg with spaces"
     assert_success
-    assert_output "\$0 = ${DIR}/testdata/executable.real
+    OUTPUT="\$0 = ${REAL}"
+    assert_output "${OUTPUT}
 arg1
 arg2
 arg\ with\ spaces"
 }
+@test "wrap-bin.sh ${DIR}/testdata/executable (no flags)" {
+    generic_test "${DIR}/testdata/executable"
+}
 
 @test "wrap-bin.sh ${DIR}/testdata/link (no flags)" {
-    assert_link_exists "${DIR}/testdata/link"
-    run wrap_bin "${DIR}/testdata/link"
-    assert_success
-    assert_file_contains "${DIR}/testdata/link" \
-        "exec ${DIR}"'/testdata/executable  "$@"'
+    generic_test "${DIR}/testdata/link"
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/executable -flag (simple flag)" {
-    run wrap_bin "${DIR}/testdata/executable" -flag
-    assert_success
-    assert_file_executable "${DIR}/testdata/executable"
-    assert_file_contains "${DIR}/testdata/executable" \
-        "exec ${DIR}"'/testdata/executable.real -flag  "$@"'
+    generic_test "${DIR}/testdata/executable" -flag
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/link -flag (simple flag)" {
-    run wrap_bin "${DIR}/testdata/link" -flag
-    assert_success
-    assert_file_executable "${DIR}/testdata/link"
-    assert_file_contains "${DIR}/testdata/link" \
-        "exec ${DIR}"'/testdata/executable -flag  "$@"'
+    generic_test "${DIR}/testdata/link" -flag
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/executable '-flag with spaces'" {
-    run wrap_bin "${DIR}/testdata/executable" '-flag with spaces'
-    assert_success
-    assert_file_executable "${DIR}/testdata/executable"
-    assert_file_contains "${DIR}/testdata/executable" \
-        "exec ${DIR}"'/testdata/executable.real -flag\\ with\\ spaces  "$@"'
+    generic_test "${DIR}/testdata/executable" '-flag with spaces'
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/link '-flag with spaces'" {
-    run wrap_bin "${DIR}/testdata/link" '-flag with spaces'
-    assert_success
-    assert_file_executable "${DIR}/testdata/link"
-    assert_file_contains "${DIR}/testdata/link" \
-        "exec ${DIR}"'/testdata/executable -flag\\ with\\ spaces  "$@"'
+    generic_test "${DIR}/testdata/link" '-flag with spaces'
 }

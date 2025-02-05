@@ -41,6 +41,15 @@ wrap_bin() {
     assert_file_executable "${DIR}/testdata/executable"
     assert_file_contains "${DIR}/testdata/executable" \
         "exec ${DIR}"'/testdata/executable.real  "$@"'
+    run "${DIR}/testdata/executable"
+    assert_success
+    assert_output "\$0 = ${DIR}/testdata/executable.real"
+    run "${DIR}/testdata/executable" "arg1" "arg2" "arg with spaces"
+    assert_success
+    assert_output "\$0 = ${DIR}/testdata/executable.real
+arg1
+arg2
+arg\ with\ spaces"
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/link (no flags)" {

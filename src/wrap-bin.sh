@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo pipefail
+set -euo pipefail
 # wrap-bin.sh - Create wrapper script
 #
 # This script will create a wrapper script, replacing the passed argument (a link) with a wrapper script that applies some flags.
@@ -19,12 +19,14 @@ If <link-or-bin> is a binary, the binary will be renamed to <binary>.real and a 
 If <link-or-bin> is not an absolute path, it will be resolved from the PATH.
 "
 #######################
+set -x
 
 ### FUNCTIONS ###
 # Splat passed flags to an escaped string
 SPLAT_FLAGS() {
-    if [ -n "${1:-}" ]; then
-        FLAGS_SPLAT="$(printf "%q " "${@}")"
+    local FLAGS_SPLAT
+    if [[ -n "${1:-}" ]]; then
+        FLAGS_SPLAT="$(printf "%s\n" "${@}")"
     else
         FLAGS_SPLAT=""
     fi
@@ -39,14 +41,15 @@ TEMPLATE_SCRIPT() {
 exec __TARGET__ __FLAGS__ "$@" '
     SCRIPT="${SCRIPT//__SCRIPT__/"${LINK_OR_BIN}"}" # Replace the comment in the header, so we can identify the script
     SCRIPT="${SCRIPT//__TARGET__/"${TARGET}"}" # Substitute the target in
-    SCRIPT="${SCRIPT//__FLAGS__/"$(SPLAT_FLAGS "${FLAGS[@]}")"}" # Substitute the flags in
+    #SCRIPT="${SCRIPT//__FLAGS__/"$(SPLAT_FLAGS "${FLAGS[@]}")"}" # Substitute the flags in
+    SCRIPT="${SCRIPT//__FLAGS__/"${SPLAT_FLAGS}"}" # Substitute the flags in
     printf "%s\n" "${SCRIPT}"
 }
 
 MAIN() {
     # Check if the user passed an argument, display USAGE and fail if not
     LINK_OR_BIN="${1:?"${USAGE}"}"
-    [ "$LINK_OR_BIN" == "--help" ] && echo "${USAGE}" && return 0
+    [[ "${LINK_OR_BIN}" == "--help" ]] && echo "${USAGE}" && return 0
 
     # If LINK_OR_BIN is not an absolute path, resolve it from $PATH
     if [[ ! "${LINK_OR_BIN}" == /* ]]; then
@@ -54,8 +57,9 @@ MAIN() {
     fi
 
     # Get flags from command line
-    shift # Remove LINK_OR_BIN from the arguments
-    FLAGS=("${@:-}") # Set the remaining arguments as flags
+    #shift # Remove LINK_OR_BIN from the arguments
+    FLAGS=("${@:2}") # Set the remaining arguments as flags
+    SPLAT_FLAGS="$(SPLAT_FLAGS "${FLAGS[@]}")"
 
 
     # `test -x FOO_FILE` returns true for executable files, but also returns true for executable links that point to executables. However, it returns false for broken links, regular files, and nonexistant files.

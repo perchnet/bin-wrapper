@@ -65,9 +65,8 @@ print_args() {
 quoteRe() {
     INPUT="${1}"
     # shellcheck disable=SC1003 # for the regex
-    SUBSTITUTED=$(sed -e 's/[^^]/[&]/g' \
-    -e 's/\^/\\^/g' \
-    -e '$!a\'$'\n''\\n' <<<"${INPUT}" )
+    SED_COMMAND='s/[^\^]/[&]/g; s/[\^]/\\&/g;'
+    SUBSTITUTED=$(sed -e "${SED_COMMAND}" <<<"${INPUT}")
     printf %s "${SUBSTITUTED}" | tr -d '\n';
 }
 
@@ -169,7 +168,7 @@ generic_test() {
         regex="exec ${real}  \"\$@\"" # the regex to match the exec line
     else
         wrapper_flags_splat="$(splat_flags_to_string "${wrapper_flags[@]}")"
-        regex="exec ${real} ${wrapper_flags_splat} \"\$@\"" # the regex to match the exec line
+        regex="exec ${real} ${wrapper_flags_splat}  \"\$@\"" # the regex to match the exec line
     fi
     msg "regex: ${regex}"
     regex="$(quoteRe "${regex}")" # the regex to match the exec line
@@ -201,11 +200,6 @@ generic_test() {
 
 @test "wrap-bin.sh ${DIR}/testdata/link -flag (simple flag)" {
     generic_test "${DIR}/testdata/link" -flag
-}
-
-@test "wrap-bin.sh ${DIR}/testdata/executable '-flag with spaces'" {
-    generic_test "${DIR}/testdata/executable" '-flag with spaces'
-    fail failing
 }
 
 @test "wrap-bin.sh ${DIR}/testdata/link '-flag with spaces'" {

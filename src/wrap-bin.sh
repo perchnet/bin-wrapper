@@ -26,7 +26,7 @@ set -x
 SPLAT_FLAGS() {
     local FLAGS_SPLAT
     if [[ -n "${1:-}" ]]; then
-        FLAGS_SPLAT="$(printf "%s\n" "${@}")"
+        FLAGS_SPLAT="$(printf "%q " "${@}")"
     else
         FLAGS_SPLAT=""
     fi

@@ -17,6 +17,11 @@ If <link-or-bin> is a link, it will be replaced with a script that launches the 
 If <link-or-bin> is a binary, the binary will be renamed to <binary>.real and a script will be created in its place. The script will launch the binary with the flags passed.
 
 If <link-or-bin> is not an absolute path, it will be resolved from the PATH.
+
+If you'd like to make a custom wrapper script, with a custom target, do the following:
+    - Make a link to the target: ln -s /usr/bin/firefox /usr/bin/firefox-wrapper
+    - Run this script with the link as the first argument: ${0} /usr/bin/firefox-wrapper --private-window
+    - The script will replace the link with a wrapper script that launches the target with the flags passed.
 "
 #######################
 set -x
